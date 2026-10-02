@@ -2,8 +2,11 @@ require("dotenv").config();
 
 const express = require("express");
 const connectDatabase = require("./config/db");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
+
+app.use(express.json());
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -11,6 +14,8 @@ app.get("/api/health", (req, res) => {
     message: "Server is running",
   });
 });
+
+app.use("/api/auth", authRoutes);
 
 async function startServer() {
   try {
