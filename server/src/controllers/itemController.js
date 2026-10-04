@@ -1,5 +1,9 @@
+const mongoose = require("mongoose");
 const Item = require("../models/Item");
 const { cloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
+
+const ITEM_TYPES = ["LOST", "FOUND"];
+const ITEM_STATUSES = ["ACTIVE", "RESOLVED"];
 
 function uploadImage(buffer) {
   return new Promise((resolve, reject) => {
@@ -82,4 +86,82 @@ async function createItem(req, res) {
   }
 }
 
-module.exports = { createItem };
+function validateQueryValue(value, allowedValues, fieldName) {
+  if (value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== "string" || !allowedValues.includes(value)) {
+    return `${fieldName} must be one of: ${allowedValues.join(", ")}.`;
+  }
+
+  return null;
+}
+
+function safeUserPopulate() {
+  return { path: "userId", select: "name" };
+}
+
+async function getItems(req, res) {
+  const { type, category, location, status } = req.query;
+  const typeError = validateQueryValue(type, ITEM_TYPES, "type");
+  const statusError = validateQueryValue(status, ITEM_STATUSES, "status");
+
+  if (typeError || statusError) {
+    return res.status(400).json({
+      success: false,
+      message: typeError || statusError,
+    });
+  }
+
+  const filter = { status: status || "ACTIVE" };
+  if (type) filter.type = type;
+  if (typeof category === "string" && category.trim()) filter.category = category.trim();
+  if (typeof location === "string" && location.trim()) filter.location = location.trim();
+
+  try {
+    const items = await Item.find(filter)
+      .sort({ createdAt: -1 })
+      .populate(safeUserPopulate());
+
+    return res.status(200).json({ success: true, items });
+  } catch (error) {
+    console.error("Item list failed:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch items.",
+    });
+  }
+}
+
+async function getItemById(req, res) {
+  const { id } = req.params;
+
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid item ID.",
+    });
+  }
+
+  try {
+    const item = await Item.findById(id).populate(safeUserPopulate());
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found.",
+      });
+    }
+
+    return res.status(200).json({ success: true, item });
+  } catch (error) {
+    console.error("Item detail failed:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch item.",
+    });
+  }
+}
+
+module.exports = { createItem, getItemById, getItems };
