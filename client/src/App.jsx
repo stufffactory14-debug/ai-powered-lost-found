@@ -2,6 +2,7 @@ import { BrowserRouter, Link, Route, Routes, useNavigate } from "react-router-do
 import useAuth from "./context/useAuth";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import PostItemPage from "./pages/PostItemPage";
 import SignupPage from "./pages/SignupPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
@@ -32,6 +33,7 @@ function Navigation() {
           {isAuthenticated ? (
             <>
               <Link to="/dashboard">Dashboard</Link>
+              <Link to="/post-item">Post item</Link>
               <button className="cursor-pointer" onClick={handleLogout} type="button">Logout</button>
             </>
           ) : (
@@ -55,6 +57,7 @@ function App() {
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/post-item" element={<ProtectedRoute><PostItemPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );
