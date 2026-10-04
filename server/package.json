@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test:gemini": "node scripts/test-gemini.js"
   },
   "keywords": [
     "lost-and-found",
@@ -18,6 +19,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@google/genai": "^2.27.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
