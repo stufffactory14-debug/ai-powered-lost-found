@@ -1,11 +1,17 @@
 require("dotenv").config();
 
 const express = require("express");
+const cors = require("cors");
 const connectDatabase = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Authorization", "Content-Type"],
+}));
 app.use(express.json());
 
 app.get("/api/health", (req, res) => {
