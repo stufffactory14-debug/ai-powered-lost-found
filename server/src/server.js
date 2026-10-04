@@ -2,8 +2,10 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const multer = require("multer");
 const connectDatabase = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const itemRoutes = require("./routes/itemRoutes");
 
 const app = express();
 
@@ -22,6 +24,30 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/items", itemRoutes);
+
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    const message = error.code === "LIMIT_FILE_SIZE"
+      ? "Image must be 5 MB or smaller."
+      : "Invalid image upload.";
+
+    return res.status(400).json({ success: false, message });
+  }
+
+  if (error.code === "UNSUPPORTED_FILE_TYPE") {
+    return res.status(400).json({
+      success: false,
+      message: "Only image files are allowed.",
+    });
+  }
+
+  console.error("Request failed:", error.message);
+  return res.status(500).json({
+    success: false,
+    message: "Unable to process the request.",
+  });
+});
 
 async function startServer() {
   try {
