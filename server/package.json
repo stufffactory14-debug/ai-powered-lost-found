@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "test:gemini": "node scripts/test-gemini.js",
     "test:chroma": "node scripts/test-chroma.js",
-    "verify:chroma:item": "node scripts/verify-chroma-item.js"
+    "verify:chroma:item": "node scripts/verify-chroma-item.js",
+    "test:item-search-route": "node scripts/test-item-search-route.js"
   },
   "keywords": [
     "lost-and-found",

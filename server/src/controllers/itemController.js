@@ -2,9 +2,14 @@ const mongoose = require("mongoose");
 const Item = require("../models/Item");
 const { cloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const { indexItemText } = require("../services/itemEmbeddingService");
+const { generateEmbedding } = require("../config/gemini");
+const { getExistingTextCollection } = require("../config/chroma");
 
 const ITEM_TYPES = ["LOST", "FOUND"];
 const ITEM_STATUSES = ["ACTIVE", "RESOLVED"];
+const DEFAULT_SEARCH_LIMIT = 10;
+const MAX_SEARCH_LIMIT = 50;
+const MAX_SEARCH_QUERY_LENGTH = 500;
 
 function uploadImage(buffer) {
   return new Promise((resolve, reject) => {
@@ -176,4 +181,83 @@ async function getItemById(req, res) {
   }
 }
 
-module.exports = { createItem, getItemById, getItems };
+function getSearchLimit() {
+  const configuredDefault = Number.parseInt(process.env.SEMANTIC_SEARCH_DEFAULT_LIMIT, 10);
+  const configuredMaximum = Number.parseInt(process.env.SEMANTIC_SEARCH_MAX_LIMIT, 10);
+  const defaultLimit = Number.isInteger(configuredDefault) && configuredDefault > 0
+    ? configuredDefault
+    : DEFAULT_SEARCH_LIMIT;
+  const maximum = Number.isInteger(configuredMaximum) && configuredMaximum > 0
+    ? configuredMaximum
+    : MAX_SEARCH_LIMIT;
+
+  return { defaultLimit: Math.min(defaultLimit, maximum), maximum };
+}
+
+async function searchItems(req, res) {
+  const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
+
+  if (!query) {
+    return res.status(400).json({
+      success: false,
+      message: "Search query q is required.",
+    });
+  }
+
+  const maxQueryLength = Number.parseInt(process.env.SEMANTIC_SEARCH_MAX_QUERY_LENGTH, 10) || MAX_SEARCH_QUERY_LENGTH;
+  if (query.length > maxQueryLength) {
+    return res.status(400).json({
+      success: false,
+      message: `Search query must be ${maxQueryLength} characters or fewer.`,
+    });
+  }
+
+  const { defaultLimit, maximum } = getSearchLimit();
+  const rawLimit = req.query.limit;
+  const limit = rawLimit === undefined ? defaultLimit : Number(rawLimit);
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > maximum) {
+    return res.status(400).json({
+      success: false,
+      message: `limit must be an integer between 1 and ${maximum}.`,
+    });
+  }
+
+  try {
+    const queryEmbedding = await generateEmbedding(query);
+    const collection = await getExistingTextCollection();
+    const result = await collection.query({
+      queryEmbeddings: [queryEmbedding],
+      nResults: limit,
+      include: ["metadatas", "distances"],
+    });
+    const rankedIds = result.ids?.[0] || [];
+
+    if (rankedIds.length === 0) {
+      return res.status(200).json({ success: true, items: [] });
+    }
+
+    const items = await Item.find({ _id: { $in: rankedIds } }).populate(safeUserPopulate());
+    const itemsById = new Map(items.map((item) => [item._id.toString(), item]));
+    const distances = result.distances?.[0] || [];
+    const rankedItems = rankedIds
+      .map((id, index) => {
+        const item = itemsById.get(id);
+        if (!item) return null;
+
+        const itemData = typeof item.toObject === "function" ? item.toObject() : item;
+        return { ...itemData, distance: distances[index] };
+      })
+      .filter(Boolean);
+
+    return res.status(200).json({ success: true, items: rankedItems });
+  } catch (error) {
+    console.error("Semantic item search failed:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Semantic search is temporarily unavailable.",
+    });
+  }
+}
+
+module.exports = { createItem, getItemById, getItems, searchItems };
