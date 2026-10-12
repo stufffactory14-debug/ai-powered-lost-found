@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test:gemini": "node scripts/test-gemini.js"
+    "test:gemini": "node scripts/test-gemini.js",
+    "test:chroma": "node scripts/test-chroma.js",
+    "verify:chroma:item": "node scripts/verify-chroma-item.js"
   },
   "keywords": [
     "lost-and-found",
@@ -21,6 +23,7 @@
   "dependencies": {
     "@google/genai": "^2.27.0",
     "bcryptjs": "^3.0.3",
+    "chromadb": "^3.5.0",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
     "dotenv": "^18.0.5",

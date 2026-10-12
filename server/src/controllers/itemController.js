@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Item = require("../models/Item");
 const { cloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
+const { indexItemText } = require("../services/itemEmbeddingService");
 
 const ITEM_TYPES = ["LOST", "FOUND"];
 const ITEM_STATUSES = ["ACTIVE", "RESOLVED"];
@@ -75,6 +76,17 @@ async function createItem(req, res) {
       imageUrl,
       userId: req.userId,
     });
+
+    try {
+      await indexItemText(item);
+    } catch (indexingError) {
+      console.error("Item vector indexing failed:", indexingError.message);
+      return res.status(500).json({
+        success: false,
+        message: "Item was saved, but text indexing failed. Retry indexing for this item.",
+        itemId: item._id,
+      });
+    }
 
     return res.status(201).json({ success: true, item });
   } catch (error) {
