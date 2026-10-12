@@ -4,6 +4,7 @@ import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import PostItemPage from "./pages/PostItemPage";
 import SignupPage from "./pages/SignupPage";
+import SearchPage from "./pages/SearchPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 
@@ -34,12 +35,14 @@ function Navigation() {
             <>
               <Link to="/dashboard">Dashboard</Link>
               <Link to="/post-item">Post item</Link>
+              <Link to="/search">Search</Link>
               <button className="cursor-pointer" onClick={handleLogout} type="button">Logout</button>
             </>
           ) : (
             <>
               <Link to="/login">Login</Link>
               <Link to="/signup">Sign up</Link>
+              <Link to="/search">Search</Link>
             </>
           )}
         </div>
@@ -56,6 +59,7 @@ function App() {
         <Route path="/" element={<PlaceholderPage title="AI-Powered Lost & Found" description="Frontend foundation is running." />} />
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/post-item" element={<ProtectedRoute><PostItemPage /></ProtectedRoute>} />
       </Routes>
