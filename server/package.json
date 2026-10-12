@@ -9,7 +9,8 @@
     "test:gemini": "node scripts/test-gemini.js",
     "test:chroma": "node scripts/test-chroma.js",
     "verify:chroma:item": "node scripts/verify-chroma-item.js",
-    "test:item-search-route": "node scripts/test-item-search-route.js"
+    "test:item-search-route": "node scripts/test-item-search-route.js",
+    "test:item-search-relevance": "node scripts/test-item-search-relevance.js"
   },
   "keywords": [
     "lost-and-found",

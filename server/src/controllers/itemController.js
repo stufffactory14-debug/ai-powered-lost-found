@@ -10,6 +10,7 @@ const ITEM_STATUSES = ["ACTIVE", "RESOLVED"];
 const DEFAULT_SEARCH_LIMIT = 10;
 const MAX_SEARCH_LIMIT = 50;
 const MAX_SEARCH_QUERY_LENGTH = 500;
+const DEFAULT_SEARCH_MAX_DISTANCE = 0.75;
 
 function uploadImage(buffer) {
   return new Promise((resolve, reject) => {
@@ -194,6 +195,14 @@ function getSearchLimit() {
   return { defaultLimit: Math.min(defaultLimit, maximum), maximum };
 }
 
+function getSearchMaxDistance() {
+  const configuredDistance = Number.parseFloat(process.env.SEMANTIC_SEARCH_MAX_DISTANCE);
+
+  return Number.isFinite(configuredDistance) && configuredDistance >= 0
+    ? configuredDistance
+    : DEFAULT_SEARCH_MAX_DISTANCE;
+}
+
 async function searchItems(req, res) {
   const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
 
@@ -232,21 +241,27 @@ async function searchItems(req, res) {
       include: ["metadatas", "distances"],
     });
     const rankedIds = result.ids?.[0] || [];
+    const distances = result.distances?.[0] || [];
+    const maxDistance = getSearchMaxDistance();
+    const matchingIds = rankedIds.filter((id, index) => {
+      const distance = distances[index];
+      return typeof distance === "number" && Number.isFinite(distance) && distance <= maxDistance;
+    });
 
-    if (rankedIds.length === 0) {
+    if (matchingIds.length === 0) {
       return res.status(200).json({ success: true, items: [] });
     }
 
-    const items = await Item.find({ _id: { $in: rankedIds } }).populate(safeUserPopulate());
+    const items = await Item.find({ _id: { $in: matchingIds } }).populate(safeUserPopulate());
     const itemsById = new Map(items.map((item) => [item._id.toString(), item]));
-    const distances = result.distances?.[0] || [];
-    const rankedItems = rankedIds
+    const rankedItems = matchingIds
       .map((id, index) => {
         const item = itemsById.get(id);
         if (!item) return null;
 
         const itemData = typeof item.toObject === "function" ? item.toObject() : item;
-        return { ...itemData, distance: distances[index] };
+        const originalIndex = rankedIds.indexOf(id);
+        return { ...itemData, distance: distances[originalIndex] };
       })
       .filter(Boolean);
 
