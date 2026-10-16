@@ -15,7 +15,12 @@
     "test:item-categorization:real": "node scripts/test-item-categorization-real.js",
     "test:item-creation-categorization": "node scripts/test-item-creation-categorization.js",
     "test:item-image-embedding": "node scripts/test-item-image-embedding.js",
-    "test:item-image-embedding:real": "node scripts/test-item-image-embedding-real.js"
+    "test:item-image-embedding:real": "node scripts/test-item-image-embedding-real.js",
+    "test:item-image-search": "node scripts/test-item-image-search.js",
+    "test:item-image-search:real": "node scripts/test-item-image-search-real.js",
+    "diagnose:item-image-indexing": "node scripts/diagnose-item-image-indexing.js",
+    "backfill:item-image-embeddings": "node scripts/backfill-item-image-embeddings.js",
+    "test:backfill:item-image-embeddings": "node scripts/test-backfill-item-image-embeddings.js"
   },
   "keywords": [
     "lost-and-found",

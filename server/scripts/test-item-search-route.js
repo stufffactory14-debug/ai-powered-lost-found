@@ -6,6 +6,7 @@ const controllers = {
   getItems: () => {},
   getItemById: () => {},
   searchItems: () => {},
+  searchItemsByImage: () => {},
 };
 
 require.cache[controllerPath] = {
@@ -22,6 +23,7 @@ const routes = router.stack
     path: layer.route.path,
     method: Object.keys(layer.route.methods)[0],
     handler: layer.route.stack[0].handle,
+    finalHandler: layer.route.stack[layer.route.stack.length - 1].handle,
   }));
 const searchRouteIndex = routes.findIndex((route) => route.method === "get" && route.path === "/search");
 const idRouteIndex = routes.findIndex((route) => route.method === "get" && route.path === "/:id");
@@ -32,4 +34,8 @@ assert.ok(searchRouteIndex < idRouteIndex, "GET /search must precede GET /:id");
 assert.equal(routes[searchRouteIndex].handler, controllers.searchItems, "GET /search must use searchItems");
 assert.equal(routes[idRouteIndex].handler, controllers.getItemById, "GET /:id must use getItemById");
 
-console.log("Item search route dispatch verified: /search reaches searchItems before /:id.");
+const imageSearchRoute = routes.find((route) => route.method === "post" && route.path === "/search/image");
+assert.ok(imageSearchRoute, "POST /search/image route was not registered");
+assert.equal(imageSearchRoute.finalHandler, controllers.searchItemsByImage, "POST /search/image must use searchItemsByImage");
+
+console.log("Item search route dispatch verified: text and image search handlers are registered safely.");

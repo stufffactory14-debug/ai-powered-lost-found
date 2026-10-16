@@ -2,13 +2,20 @@ const mongoose = require("mongoose");
 const Item = require("../models/Item");
 const { cloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const { indexItemText } = require("../services/itemEmbeddingService");
-const { indexItemImage } = require("../services/itemImageEmbeddingService");
+const {
+  ALLOWED_IMAGE_MIME_TYPES,
+  indexItemImage,
+} = require("../services/itemImageEmbeddingService");
 const {
   ALLOWED_CATEGORIES,
   categorizeItem,
 } = require("../services/itemCategorizationService");
-const { generateEmbedding } = require("../config/gemini");
-const { getExistingTextCollection } = require("../config/chroma");
+const {
+  EMBEDDING_DIMENSION,
+  generateEmbedding,
+  generateImageEmbedding,
+} = require("../config/gemini");
+const { getExistingTextCollection, getImageCollection } = require("../config/chroma");
 
 const ITEM_TYPES = ["LOST", "FOUND"];
 const ITEM_STATUSES = ["ACTIVE", "RESOLVED"];
@@ -16,6 +23,9 @@ const DEFAULT_SEARCH_LIMIT = 10;
 const MAX_SEARCH_LIMIT = 50;
 const MAX_SEARCH_QUERY_LENGTH = 500;
 const DEFAULT_SEARCH_MAX_DISTANCE = 0.75;
+const DEFAULT_IMAGE_SEARCH_LIMIT = 10;
+const MAX_IMAGE_SEARCH_LIMIT = 50;
+const DEFAULT_IMAGE_SEARCH_MAX_DISTANCE = 0.75;
 
 function uploadImage(buffer) {
   return new Promise((resolve, reject) => {
@@ -312,4 +322,113 @@ async function searchItems(req, res) {
   }
 }
 
-module.exports = { createItem, getItemById, getItems, searchItems };
+function getImageSearchConfig() {
+  const configuredDefault = Number.parseInt(process.env.IMAGE_SEARCH_DEFAULT_LIMIT, 10);
+  const configuredMaximum = Number.parseInt(process.env.IMAGE_SEARCH_MAX_LIMIT, 10);
+  const defaultLimit = Number.isInteger(configuredDefault) && configuredDefault > 0
+    ? configuredDefault
+    : DEFAULT_IMAGE_SEARCH_LIMIT;
+  const maximum = Number.isInteger(configuredMaximum) && configuredMaximum > 0
+    ? configuredMaximum
+    : MAX_IMAGE_SEARCH_LIMIT;
+  const configuredDistance = Number.parseFloat(process.env.IMAGE_SEARCH_MAX_DISTANCE);
+  const maxDistance = Number.isFinite(configuredDistance) && configuredDistance >= 0
+    ? configuredDistance
+    : DEFAULT_IMAGE_SEARCH_MAX_DISTANCE;
+
+  return {
+    defaultLimit: Math.min(defaultLimit, maximum),
+    maximum,
+    maxDistance,
+  };
+}
+
+function userIdString(value) {
+  if (!value) return "";
+  if (value._id) return value._id.toString();
+  return value.toString();
+}
+
+async function searchItemsByImage(req, res) {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "An image file is required.",
+    });
+  }
+
+  if (!ALLOWED_IMAGE_MIME_TYPES.includes(req.file.mimetype)) {
+    return res.status(400).json({
+      success: false,
+      message: "Only JPEG and PNG images are supported for image search.",
+    });
+  }
+
+  const { defaultLimit, maximum, maxDistance } = getImageSearchConfig();
+  const rawLimit = req.query.limit;
+  const limit = rawLimit === undefined ? defaultLimit : Number(rawLimit);
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > maximum) {
+    return res.status(400).json({
+      success: false,
+      message: `limit must be an integer between 1 and ${maximum}.`,
+    });
+  }
+
+  try {
+    const queryEmbedding = await generateImageEmbedding(req.file.buffer, req.file.mimetype);
+    if (!Array.isArray(queryEmbedding) || queryEmbedding.length !== EMBEDDING_DIMENSION) {
+      throw new Error("Image search embedding has an invalid dimension.");
+    }
+
+    const collection = await getImageCollection();
+    const result = await collection.query({
+      queryEmbeddings: [queryEmbedding],
+      nResults: limit,
+      include: ["distances"],
+    });
+    const rankedIds = result.ids?.[0] || [];
+    const distances = result.distances?.[0] || [];
+    const matching = rankedIds
+      .map((id, index) => ({
+        id: id.toString(),
+        distance: distances[index],
+      }))
+      .filter(({ distance }) => typeof distance === "number" && Number.isFinite(distance) && distance <= maxDistance);
+
+    if (matching.length === 0) {
+      return res.status(200).json({ success: true, items: [] });
+    }
+
+    const items = await Item.find({
+      _id: { $in: matching.map(({ id }) => id) },
+      status: "ACTIVE",
+    }).populate(safeUserPopulate());
+    const itemsById = new Map(items.map((item) => [item._id.toString(), item]));
+    const requesterId = userIdString(req.userId);
+    const rankedItems = matching
+      .map(({ id, distance }) => {
+        const item = itemsById.get(id);
+        if (!item || userIdString(item.userId) === requesterId) return null;
+        const itemData = typeof item.toObject === "function" ? item.toObject() : item;
+        return { ...itemData, distance };
+      })
+      .filter(Boolean);
+
+    return res.status(200).json({ success: true, items: rankedItems });
+  } catch (error) {
+    console.error("Image item search failed:", error.name || "Error");
+    return res.status(500).json({
+      success: false,
+      message: "Image search is temporarily unavailable.",
+    });
+  }
+}
+
+module.exports = {
+  createItem,
+  getItemById,
+  getItems,
+  searchItems,
+  searchItemsByImage,
+};
