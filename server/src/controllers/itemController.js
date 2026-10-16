@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 const Item = require("../models/Item");
 const { cloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const { indexItemText } = require("../services/itemEmbeddingService");
+const {
+  ALLOWED_CATEGORIES,
+  categorizeItem,
+} = require("../services/itemCategorizationService");
 const { generateEmbedding } = require("../config/gemini");
 const { getExistingTextCollection } = require("../config/chroma");
 
@@ -58,7 +62,26 @@ async function createItem(req, res) {
     });
   }
 
+  const submittedCategory = category.trim();
+  if (!ALLOWED_CATEGORIES.includes(submittedCategory)) {
+    return res.status(400).json({
+      success: false,
+      message: `Category must be one of: ${ALLOWED_CATEGORIES.join(", ")}.`,
+    });
+  }
+
   try {
+    let itemCategory = submittedCategory;
+
+    try {
+      const categorized = await categorizeItem({ title, description });
+      if (categorized && ALLOWED_CATEGORIES.includes(categorized.category)) {
+        itemCategory = categorized.category;
+      }
+    } catch {
+      // A valid user category remains the safe fallback when Gemini is unavailable.
+    }
+
     let imageUrl;
 
     if (req.file) {
@@ -75,7 +98,7 @@ async function createItem(req, res) {
     const item = await Item.create({
       title,
       description,
-      category,
+      category: itemCategory,
       type,
       location,
       verificationQuestion,

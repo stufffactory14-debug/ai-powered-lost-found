@@ -12,7 +12,8 @@
     "test:item-search-route": "node scripts/test-item-search-route.js",
     "test:item-search-relevance": "node scripts/test-item-search-relevance.js",
     "test:item-categorization": "node scripts/test-item-categorization.js",
-    "test:item-categorization:real": "node scripts/test-item-categorization-real.js"
+    "test:item-categorization:real": "node scripts/test-item-categorization-real.js",
+    "test:item-creation-categorization": "node scripts/test-item-creation-categorization.js"
   },
   "keywords": [
     "lost-and-found",
