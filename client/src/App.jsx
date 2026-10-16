@@ -1,6 +1,7 @@
 import { BrowserRouter, Link, Route, Routes, useNavigate } from "react-router-dom";
 import useAuth from "./context/useAuth";
 import DashboardPage from "./pages/DashboardPage";
+import FindMatchPage from "./pages/FindMatchPage";
 import LoginPage from "./pages/LoginPage";
 import PostItemPage from "./pages/PostItemPage";
 import SignupPage from "./pages/SignupPage";
@@ -35,6 +36,7 @@ function Navigation() {
             <>
               <Link to="/dashboard">Dashboard</Link>
               <Link to="/post-item">Post item</Link>
+              <Link to="/find-match">Find match</Link>
               <Link to="/search">Search</Link>
               <button className="cursor-pointer" onClick={handleLogout} type="button">Logout</button>
             </>
@@ -62,6 +64,7 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/post-item" element={<ProtectedRoute><PostItemPage /></ProtectedRoute>} />
+        <Route path="/find-match" element={<ProtectedRoute><FindMatchPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

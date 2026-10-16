@@ -19,6 +19,8 @@
     "test:item-image-search": "node scripts/test-item-image-search.js",
     "test:item-image-search:real": "node scripts/test-item-image-search-real.js",
     "diagnose:item-image-indexing": "node scripts/diagnose-item-image-indexing.js",
+    "diagnose:item-image-search:distances": "node scripts/diagnose-item-image-search-distances-real.js",
+    "diagnose:item-vector-integrity": "node scripts/diagnose-image-vector-integrity-real.js",
     "backfill:item-image-embeddings": "node scripts/backfill-item-image-embeddings.js",
     "test:backfill:item-image-embeddings": "node scripts/test-backfill-item-image-embeddings.js"
   },

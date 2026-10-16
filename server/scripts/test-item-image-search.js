@@ -1,7 +1,5 @@
 const assert = require("node:assert/strict");
 
-process.env.IMAGE_SEARCH_MAX_DISTANCE = "0.75";
-
 const controllerPath = require.resolve("../src/controllers/itemController");
 const itemPath = require.resolve("../src/models/Item");
 const cloudinaryPath = require.resolve("../src/config/cloudinary");
@@ -109,6 +107,9 @@ async function runSearch({ file = { mimetype: "image/png", buffer: Buffer.from("
 }
 
 (async () => {
+  const originalThreshold = process.env.IMAGE_SEARCH_MAX_DISTANCE;
+  delete process.env.IMAGE_SEARCH_MAX_DISTANCE;
+
   let response = await runSearch({ file: null });
   assert.equal(response.statusCode, 400);
 
@@ -123,6 +124,45 @@ async function runSearch({ file = { mimetype: "image/png", buffer: Buffer.from("
   assert.deepEqual(findFilter, { _id: { $in: ["own", "near"] }, status: "ACTIVE" });
   assert.equal(response.body.items[0].distance, 0.2);
   assert.equal(response.body.items[0].email, undefined);
+
+  queryResult = {
+    ids: [["black-samsung-phone", "black-smartphone", "black-wallet"]],
+    distances: [[0.18, 0.31, 0.82]],
+  };
+  activeItems = [
+    item("black-samsung-phone"),
+    item("black-smartphone"),
+    item("black-wallet"),
+  ];
+  response = await runSearch({ query: { limit: "3" } });
+  assert.deepEqual(
+    response.body.items.map(({ _id }) => _id),
+    ["black-samsung-phone", "black-smartphone"],
+    "phone matches inside the threshold should rank ahead of the wallet outside it",
+  );
+
+  queryResult = {
+    ids: [["phone", "smartphone", "wallet", "wallet-title"]],
+    distances: [[0.0, 0.0, 0.68091494, 0.68091494]],
+  };
+  activeItems = [item("phone"), item("smartphone"), item("wallet"), item("wallet-title")];
+  response = await runSearch({ query: { limit: "4" } });
+  assert.deepEqual(
+    response.body.items.map(({ _id }) => _id),
+    ["phone", "smartphone", "wallet", "wallet-title"],
+    "the observed distances should remain included with the default 0.75 threshold",
+  );
+
+  process.env.IMAGE_SEARCH_MAX_DISTANCE = "0.1";
+  response = await runSearch({ query: { limit: "4" } });
+  assert.deepEqual(
+    response.body.items.map(({ _id }) => _id),
+    ["phone", "smartphone"],
+    "a local 0.1 threshold should retain exact matches and exclude 0.68091494",
+  );
+  if (originalThreshold === undefined) delete process.env.IMAGE_SEARCH_MAX_DISTANCE;
+  else process.env.IMAGE_SEARCH_MAX_DISTANCE = originalThreshold;
+  process.env.IMAGE_SEARCH_MAX_DISTANCE = "0.75";
 
   queryResult = { ids: [["second", "first"]], distances: [[0.2, 0.4]] };
   activeItems = [item("first"), item("second")];
@@ -146,6 +186,9 @@ async function runSearch({ file = { mimetype: "image/png", buffer: Buffer.from("
 
   response = await runSearch({ query: { limit: "0" } });
   assert.equal(response.statusCode, 400);
+
+  if (originalThreshold === undefined) delete process.env.IMAGE_SEARCH_MAX_DISTANCE;
+  else process.env.IMAGE_SEARCH_MAX_DISTANCE = originalThreshold;
 
   console.log("Image search validation, threshold filtering, ranking, owner exclusion, empty result, and failure checks passed.");
 })().catch((error) => {
