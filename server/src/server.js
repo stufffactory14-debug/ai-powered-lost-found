@@ -6,6 +6,7 @@ const multer = require("multer");
 const connectDatabase = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const itemRoutes = require("./routes/itemRoutes");
+const claimRoutes = require("./routes/claimRoutes");
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
+app.use("/api/claims", claimRoutes);
 
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {

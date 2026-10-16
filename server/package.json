@@ -22,7 +22,8 @@
     "diagnose:item-image-search:distances": "node scripts/diagnose-item-image-search-distances-real.js",
     "diagnose:item-vector-integrity": "node scripts/diagnose-image-vector-integrity-real.js",
     "backfill:item-image-embeddings": "node scripts/backfill-item-image-embeddings.js",
-    "test:backfill:item-image-embeddings": "node scripts/test-backfill-item-image-embeddings.js"
+    "test:backfill:item-image-embeddings": "node scripts/test-backfill-item-image-embeddings.js",
+    "test:claims": "node scripts/test-claims.js"
   },
   "keywords": [
     "lost-and-found",
