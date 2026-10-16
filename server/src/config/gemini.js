@@ -36,6 +36,37 @@ async function generateEmbedding(text) {
   return values;
 }
 
+async function generateImageEmbedding(imageBuffer, mimeType) {
+  if (!Buffer.isBuffer(imageBuffer) || imageBuffer.length === 0) {
+    throw new Error("Image data must be a non-empty buffer.");
+  }
+
+  if (typeof mimeType !== "string" || !mimeType.trim()) {
+    throw new Error("Image MIME type is required.");
+  }
+
+  const ai = getGeminiClient();
+  const response = await ai.models.embedContent({
+    model: EMBEDDING_MODEL,
+    contents: [{
+      inlineData: {
+        mimeType,
+        data: imageBuffer.toString("base64"),
+      },
+    }],
+    config: {
+      outputDimensionality: EMBEDDING_DIMENSION,
+    },
+  });
+  const values = response.embeddings?.[0]?.values;
+
+  if (!Array.isArray(values) || values.length !== EMBEDDING_DIMENSION) {
+    throw new Error(`Gemini returned an invalid image embedding length: ${values?.length || 0}.`);
+  }
+
+  return values;
+}
+
 async function generateText({ model, contents, config }) {
   if (typeof contents !== "string" || !contents.trim()) {
     throw new Error("Gemini text prompt must be a non-empty string.");
@@ -60,5 +91,6 @@ module.exports = {
   EMBEDDING_DIMENSION,
   EMBEDDING_MODEL,
   generateEmbedding,
+  generateImageEmbedding,
   generateText,
 };

@@ -1,6 +1,7 @@
 const { ChromaClient } = require("chromadb");
 
 const DEFAULT_CHROMA_URL = "http://localhost:8000";
+const DEFAULT_IMAGE_COLLECTION_NAME = "lost_found_image_embeddings";
 
 function getChromaConfig() {
   const rawUrl = process.env.CHROMA_URL || DEFAULT_CHROMA_URL;
@@ -31,6 +32,10 @@ function getTextCollectionName() {
   return collectionName;
 }
 
+function getImageCollectionName() {
+  return process.env.CHROMA_IMAGE_COLLECTION || DEFAULT_IMAGE_COLLECTION_NAME;
+}
+
 async function getTextCollection() {
   const client = getChromaClient();
 
@@ -50,8 +55,20 @@ async function getExistingTextCollection() {
   });
 }
 
+async function getImageCollection() {
+  const client = getChromaClient();
+
+  return client.getOrCreateCollection({
+    name: getImageCollectionName(),
+    embeddingFunction: null,
+    metadata: { embedding_dimension: 3072 },
+  });
+}
+
 module.exports = {
   getChromaClient,
+  getImageCollection,
+  getImageCollectionName,
   getExistingTextCollection,
   getTextCollection,
   getTextCollectionName,
