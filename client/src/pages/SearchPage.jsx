@@ -80,7 +80,8 @@ function SearchPage() {
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-6 py-10">
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Find a lost or found item</h1>
+        <p className="text-sm font-medium text-indigo-600">Semantic search</p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">Search by description</h1>
         <p className="mt-2 text-slate-600">Describe what you are looking for in natural language.</p>
         <form className="mt-6 flex flex-col gap-3 sm:flex-row" onSubmit={handleSubmit}>
           <label className="sr-only" htmlFor="search-query">Search items</label>

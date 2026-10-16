@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../lib/axios";
 
 const initialForm = {
@@ -11,7 +12,9 @@ const initialForm = {
 };
 
 function PostItemPage() {
-  const [form, setForm] = useState(initialForm);
+  const [searchParams] = useSearchParams();
+  const requestedType = searchParams.get("type");
+  const [form, setForm] = useState(() => ({ ...initialForm, type: requestedType === "FOUND" ? "FOUND" : "LOST" }));
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

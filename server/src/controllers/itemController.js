@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Item = require("../models/Item");
+const Claim = require("../models/Claim");
 const { cloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const { indexItemText } = require("../services/itemEmbeddingService");
 const {
@@ -196,6 +197,60 @@ async function getItems(req, res) {
       success: false,
       message: "Unable to fetch items.",
     });
+  }
+}
+
+async function getMyItems(req, res) {
+  const typeError = validateQueryValue(req.query.type, ITEM_TYPES, "type");
+  const statusError = validateQueryValue(req.query.status, ITEM_STATUSES, "status");
+  if (typeError || statusError) return res.status(400).json({ success: false, message: typeError || statusError });
+
+  try {
+    const filter = { userId: req.userId, status: req.query.status || "ACTIVE" };
+    if (req.query.type) filter.type = req.query.type;
+    const items = await Item.find(filter).sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, items });
+  } catch (error) {
+    console.error("Owned item lookup failed:", error.name || "Error");
+    return res.status(500).json({ success: false, message: "Unable to fetch your items." });
+  }
+}
+
+async function resolveMyItem(req, res) {
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ success: false, message: "Invalid item ID." });
+  try {
+    const item = await Item.findOneAndUpdate(
+      { _id: id, userId: req.userId, status: "ACTIVE" },
+      { $set: { status: "RESOLVED" } },
+      { new: true },
+    );
+    if (!item) return res.status(404).json({ success: false, message: "Active item not found or not owned by you." });
+    return res.status(200).json({ success: true, item });
+  } catch (error) {
+    console.error("Item resolution failed:", error.name || "Error");
+    return res.status(500).json({ success: false, message: "Unable to resolve item." });
+  }
+}
+
+async function deleteMyItem(req, res) {
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id)) return res.status(400).json({ success: false, message: "Invalid item ID." });
+  try {
+    const item = await Item.findOne({ _id: id, userId: req.userId });
+    if (!item) return res.status(404).json({ success: false, message: "Item not found or not owned by you." });
+    const claimCount = await Claim.countDocuments({ itemId: id });
+    if (claimCount > 0) return res.status(409).json({ success: false, message: "Items with claims cannot be deleted." });
+
+    const textCollection = await getExistingTextCollection();
+    const imageCollection = await getImageCollection();
+    await textCollection.delete({ ids: [id] });
+    await imageCollection.delete({ ids: [id] });
+    await Item.deleteOne({ _id: id, userId: req.userId });
+    return res.status(200).json({ success: true, message: "Item deleted." });
+  } catch (error) {
+    console.error("Item deletion failed:", error.name || "Error");
+    return res.status(500).json({ success: false, message: "Unable to delete item. Search indexes were left unchanged." });
   }
 }
 
@@ -427,6 +482,9 @@ async function searchItemsByImage(req, res) {
 
 module.exports = {
   createItem,
+  getMyItems,
+  resolveMyItem,
+  deleteMyItem,
   getItemById,
   getItems,
   searchItems,

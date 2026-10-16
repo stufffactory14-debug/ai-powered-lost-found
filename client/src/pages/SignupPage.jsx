@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuth from "../context/useAuth";
 import api from "../lib/axios";
+import AuthShell from "../components/AuthShell";
 
 function SignupPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
@@ -36,27 +37,14 @@ function SignupPage() {
     }
   }
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md items-center px-6">
-      <form className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-sm" onSubmit={handleSubmit}>
-        <h1 className="text-2xl font-bold text-slate-900">Sign up</h1>
-        <p className="mt-2 text-sm text-slate-600">Create your account.</p>
-        {error && <p className="mt-4 rounded bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
-        <label className="mt-5 block text-sm font-medium text-slate-700" htmlFor="signup-name">Name</label>
-        <input className="mt-1 w-full rounded border border-slate-300 px-3 py-2" id="signup-name" name="name" onChange={updateField} value={form.name} />
-        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="signup-email">Email</label>
-        <input className="mt-1 w-full rounded border border-slate-300 px-3 py-2" id="signup-email" name="email" onChange={updateField} type="email" value={form.email} />
-        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="signup-phone">Phone</label>
-        <input className="mt-1 w-full rounded border border-slate-300 px-3 py-2" id="signup-phone" name="phone" onChange={updateField} type="tel" value={form.phone} />
-        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="signup-password">Password</label>
-        <input className="mt-1 w-full rounded border border-slate-300 px-3 py-2" id="signup-password" name="password" onChange={updateField} type="password" value={form.password} />
-        <button className="mt-6 w-full rounded bg-slate-900 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={isLoading} type="submit">
+  return <AuthShell mode="signup"><form className="mt-8" onSubmit={handleSubmit}>
+        {error && <p className="mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
+        {[["name", "Name", "text"], ["email", "Email", "email"], ["phone", "Phone", "tel"], ["password", "Password", "password"]].map(([name, label, type]) => <div className="mb-5" key={name}><label className="block text-sm font-medium text-slate-700" htmlFor={`signup-${name}`}>{label}</label><input className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-3 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200" id={`signup-${name}`} name={name} onChange={updateField} type={type} value={form[name]} /></div>)}
+        <button className="mt-2 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60" disabled={isLoading} type="submit">
           {isLoading ? "Creating account..." : "Sign up"}
         </button>
-        <p className="mt-4 text-sm text-slate-600">Already have an account? <Link className="font-medium text-slate-900" to="/login">Login</Link></p>
-      </form>
-    </main>
-  );
+        <p className="mt-6 text-center text-sm text-slate-600">Already have an account? <Link className="font-semibold text-indigo-700" to="/login">Login</Link></p>
+      </form></AuthShell>;
 }
 
 export default SignupPage;

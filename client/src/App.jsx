@@ -1,4 +1,4 @@
-import { BrowserRouter, Link, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import useAuth from "./context/useAuth";
 import DashboardPage from "./pages/DashboardPage";
 import FindMatchPage from "./pages/FindMatchPage";
@@ -8,6 +8,11 @@ import SignupPage from "./pages/SignupPage";
 import SearchPage from "./pages/SearchPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
+import AppLayout from "./layouts/AppLayout";
+import UnavailablePage from "./pages/UnavailablePage";
+import BrowsePage from "./pages/BrowsePage";
+import ItemDetailsPage from "./pages/ItemDetailsPage";
+import MyItemsPage from "./pages/MyItemsPage";
 
 function PlaceholderPage({ title, description }) {
   return (
@@ -21,6 +26,8 @@ function PlaceholderPage({ title, description }) {
 function Navigation() {
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  if (isAuthenticated && ["/dashboard", "/browse", "/items/", "/post-item", "/find-match", "/my-items", "/my-claims", "/claims-received", "/profile"].some((path) => location.pathname.startsWith(path))) return null;
 
   function handleLogout() {
     logout();
@@ -34,10 +41,7 @@ function Navigation() {
         <div className="flex gap-4 text-sm text-slate-600">
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard">Dashboard</Link>
-              <Link to="/post-item">Post item</Link>
-              <Link to="/find-match">Find match</Link>
-              <Link to="/search">Search</Link>
+              <Link to="/dashboard">Dashboard</Link><Link to="/browse">Browse</Link><Link to="/search">Semantic search</Link>
               <button className="cursor-pointer" onClick={handleLogout} type="button">Logout</button>
             </>
           ) : (
@@ -62,9 +66,17 @@ function App() {
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
         <Route path="/search" element={<SearchPage />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/post-item" element={<ProtectedRoute><PostItemPage /></ProtectedRoute>} />
-        <Route path="/find-match" element={<ProtectedRoute><FindMatchPage /></ProtectedRoute>} />
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/browse" element={<BrowsePage />} />
+          <Route path="/items/:id" element={<ItemDetailsPage />} />
+          <Route path="/post-item" element={<PostItemPage />} />
+          <Route path="/find-match" element={<FindMatchPage />} />
+          <Route path="/my-items" element={<MyItemsPage />} />
+          <Route path="/my-claims" element={<UnavailablePage title="My claims" />} />
+          <Route path="/claims-received" element={<UnavailablePage title="Claims received" />} />
+          <Route path="/profile" element={<UnavailablePage title="Profile" />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

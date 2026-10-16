@@ -7,6 +7,9 @@ const controllers = {
   getItemById: () => {},
   searchItems: () => {},
   searchItemsByImage: () => {},
+  getMyItems: () => {},
+  resolveMyItem: () => {},
+  deleteMyItem: () => {},
 };
 
 require.cache[controllerPath] = {
