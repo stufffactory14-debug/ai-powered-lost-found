@@ -8,6 +8,7 @@ const navigation = [
   { label: "Report lost item", to: "/post-item?type=LOST" },
   { label: "Report found item", to: "/post-item?type=FOUND" },
   { label: "Find match", to: "/find-match" },
+  { label: "AI Search", to: "/search" },
   { label: "My items", to: "/my-items" },
   { label: "My claims", to: "/my-claims" },
   { label: "Claims received", to: "/claims-received" },

@@ -98,9 +98,14 @@ function reset() {
   let response = await callReceived("owner-1");
   assert.equal(response.statusCode, 200);
   assert.equal(response.body.claims.length, 2);
-  assert.equal(response.body.claims[0].verificationAnswer, undefined);
+  assert.equal(response.body.claims[0].verificationAnswer, "secret");
 
   ownedItems = [];
+  response = await callReceived("other-owner");
+  assert.deepEqual(response.body.claims, []);
+
+  // A user who does not own the associated item cannot receive its answer.
+  ownedItems = [{ _id: "different-item" }];
   response = await callReceived("other-owner");
   assert.deepEqual(response.body.claims, []);
 

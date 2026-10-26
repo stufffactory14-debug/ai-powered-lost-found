@@ -13,6 +13,8 @@ import UnavailablePage from "./pages/UnavailablePage";
 import BrowsePage from "./pages/BrowsePage";
 import ItemDetailsPage from "./pages/ItemDetailsPage";
 import MyItemsPage from "./pages/MyItemsPage";
+import ClaimsPage from "./pages/ClaimsPage";
+import MyClaimsPage from "./pages/MyClaimsPage";
 
 function PlaceholderPage({ title, description }) {
   return (
@@ -73,8 +75,8 @@ function App() {
           <Route path="/post-item" element={<PostItemPage />} />
           <Route path="/find-match" element={<FindMatchPage />} />
           <Route path="/my-items" element={<MyItemsPage />} />
-          <Route path="/my-claims" element={<UnavailablePage title="My claims" />} />
-          <Route path="/claims-received" element={<UnavailablePage title="Claims received" />} />
+          <Route path="/my-claims" element={<MyClaimsPage />} />
+          <Route path="/claims-received" element={<ClaimsPage />} />
           <Route path="/profile" element={<UnavailablePage title="Profile" />} />
         </Route>
       </Routes>

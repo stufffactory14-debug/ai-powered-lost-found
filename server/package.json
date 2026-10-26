@@ -25,7 +25,8 @@
     "test:backfill:item-image-embeddings": "node scripts/test-backfill-item-image-embeddings.js",
     "test:claims": "node scripts/test-claims.js",
     "test:claim-review": "node scripts/test-claim-review.js",
-    "test:item-lifecycle": "node scripts/test-item-lifecycle.js"
+    "test:item-lifecycle": "node scripts/test-item-lifecycle.js",
+    "test:claim-clarification": "node scripts/test-claim-clarification.js"
   },
   "keywords": [
     "lost-and-found",

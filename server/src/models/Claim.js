@@ -30,6 +30,26 @@ const claimSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  clarificationQuestion: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+    default: null,
+  },
+  clarificationRequestedAt: {
+    type: Date,
+    default: null,
+  },
+  clarificationReply: {
+    type: String,
+    trim: true,
+    maxlength: 1000,
+    default: null,
+  },
+  clarificationRepliedAt: {
+    type: Date,
+    default: null,
+  },
 });
 
 const Claim = mongoose.model("Claim", claimSchema);
